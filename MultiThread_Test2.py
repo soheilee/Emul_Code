@@ -13,11 +13,12 @@ from datetime import datetime
 
 #from Consumer_Test import message_type
 Flag_Status = 0
-
+message_type=0
+message_id=0
 
 
 # -------------------------  Run the server program and wait for 500ms --------------------------------------------------
-command = 'python3 RunServer.py'
+command = 'sudo python3 RunServer.py'
 p = subprocess.Popen(['gnome-terminal', '--disable-factory', 'bash', '-e', command], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, preexec_fn=os.setpgrp)
 time.sleep(0.5)
 
@@ -252,18 +253,16 @@ class Dialog(QWidget):
         self.Logbox.insertPlainText("\t")
         self.Logbox.insertPlainText("Simulation Started")
         self.Logbox.setDisabled(True)
-        self.step = 0;
+        self.step = 0
         self.button_load.setDisabled(True)
         self.button_search.setDisabled(True)
         self.lineEdit.setDisabled(True)
-        while self.step < 100:
-            time.sleep(0.1)
-            self.step +=1
-            self.pbar.setValue(self.step)
-        self.button_load.setEnabled(True)
+        self.btnBox.setDisabled(True)
+        self.pbar.setRange(0,0)
+        '''self.button_load.setEnabled(True)
         self.button_search.setEnabled(True)
         self.lineEdit.setEnabled(True)
-        self.Logbox.setEnabled(True)                                                                        
+        self.Logbox.setEnabled(True)'''                                                                        
         #os.killpg(p.pid, signal.SIGINT)
     def evt_update_progress(self,val):
             self.pbar.setValue(val)
@@ -302,33 +301,18 @@ class WorkerThread(QThread):
         global Flag_Status
         message_id = properties.message_id
         message_type = properties.type
-        print(message_type)
+        print(message_id)
         
-        if(message_type=="ProgramFinished"):
+        if(message_id=="ProgramFinishedID"):
             Flag_Status = 8
-        elif(message_type=="ServerReady"):
+        elif(message_id=="ServerReadyID"):
             Flag_Status = 1
-        elif(message_type=="PathReceivedSuccessfully"):
+        elif(message_id=="PathReceivedSuccessfullyID"):
             Flag_Status = 2
-        elif(message_type=="20"):
+        elif(message_id=="LoadInProgressID"):
             Flag_Status = 3
-            Percent = 20
+            Percent = int(message_type)
             self.update_progress.emit(Percent)
-            self.LoadingSuccessful.emit(False)
-        elif(message_type=="40"):
-            Flag_Status = 4
-            Percent = 40
-            self.update_progress.emit(Percent)
-            self.LoadingSuccessful.emit(False)
-        elif(message_type=="60"):
-            Flag_Status = 5
-            Percent = 60
-            self.update_progress.emit(Percent)
-            self.LoadingSuccessful.emit(False)
-        elif(message_type=="80"):
-            Flag_Status = 6
-            Percent = 80
-            self.update_progress.emit(Percent)  
             self.LoadingSuccessful.emit(False)
         elif(message_type=="FileLoadedSuccessfully"):
             Flag_Status = 7    
