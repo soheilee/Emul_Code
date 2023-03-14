@@ -15,7 +15,7 @@
 #include <fcntl.h> 
 #include <cstring>
 #include "PhysMem.h"
-
+#include <iostream>
 
 
 /**
@@ -32,18 +32,20 @@ static std::string MessageID, Message, FilePath;
 static int StopFlag = 0;
 static std::string message_Path_Received = "{\"MessageType\":\"PathReceivedSuccessfully\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"PathReceivedSuccessfullyID\",\"ApiLevel\":\"R&D\"}";
 static std::string message_Load_Successful = "{\"MessageType\":\"FileLoadedSuccessfully\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"FileLoadedSuccessfullyID\",\"ApiLevel\":\"R&D\"}";
-static std::string message_Load_Progress_20 = "{\"MessageType\":\"20\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"FileLoadedSuccessfullyID\",\"ApiLevel\":\"R&D\"}";
+/*static std::string message_Load_Progress_20 = "{\"MessageType\":\"20\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"FileLoadedSuccessfullyID\",\"ApiLevel\":\"R&D\"}";
 static std::string message_Load_Progress_40 = "{\"MessageType\":\"40\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"FileLoadedSuccessfullyID\",\"ApiLevel\":\"R&D\"}";
 static std::string message_Load_Progress_60 = "{\"MessageType\":\"60\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"FileLoadedSuccessfullyID\",\"ApiLevel\":\"R&D\"}";
 static std::string message_Load_Progress_80 = "{\"MessageType\":\"80\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"FileLoadedSuccessfullyID\",\"ApiLevel\":\"R&D\"}";
-static std::vector<std::string> routingKeys = {"GUI"};
+*/static std::vector<std::string> routingKeys = {"GUI"};
 static bool Select_initialized, Load_initialized, GUI_initialized, SimulationStarted_initialized ;
 int         fd;             // File descriptor of input file
 PhysMem     contigBuffer;   // Manages the reserved contiguous buffer
 const char* filename;       // Filename of the file we'll load into the contig buffer
 static size_t bufferSize;
-
+static std::string message_Load_Progress = "{\"MessageType\":\"80\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"LoadInProgressID\",\"ApiLevel\":\"R&D\"}";
+static std::string Progress;
 void fillBuffer(size_t fileSize);
+
 
 
 
@@ -127,7 +129,7 @@ std::string T_Subscribe (std::string queue, std::string routingKey)
                 {
                     std::cout << "Loading!!!" << std::endl;
                     fillBuffer(fileSize);
-                    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+                    /*std::this_thread::sleep_for(std::chrono::milliseconds(2000));
                     Publish (message_Load_Progress_20, 1, routingKeys);
                     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
                     Publish (message_Load_Progress_40, 1, routingKeys);
@@ -135,7 +137,7 @@ std::string T_Subscribe (std::string queue, std::string routingKey)
                     Publish (message_Load_Progress_60, 1, routingKeys);
                     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
                     Publish (message_Load_Progress_80, 1, routingKeys);
-                    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2000));*/
                 }
                 
                 /*getting the loading percentage here and sending it to the GUI for illustration*/
@@ -258,12 +260,16 @@ void fillBuffer(size_t fileSize)
         // Compute and display the completion percentage
         bytesLoaded += blockSize;
         int pct = 100 * bytesLoaded / fileSize;
+
+        // Send the completion percentage to the GUI
+        Progress = std::to_string(pct);
+        message_Load_Progress.replace(16,2,Progress);
+        Publish (message_Load_Progress, 1, routingKeys);
+
+        // Print the completion percentage in the terminal
         printf("\b\b\b%3i", pct);
         fflush(stdout);
     }
-
-    // Finish the "percent complete" display
-    printf("\b\b\b100\n");
 
     // Free up the localBuffer so we don't leak memory
     delete[] localBuffer;
