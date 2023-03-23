@@ -32,11 +32,7 @@ static std::string MessageID, Message, FilePath;
 static int StopFlag = 0;
 static std::string message_Path_Received = "{\"MessageType\":\"PathReceivedSuccessfully\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"PathReceivedSuccessfullyID\",\"ApiLevel\":\"R&D\"}";
 static std::string message_Load_Successful = "{\"MessageType\":\"FileLoadedSuccessfully\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"FileLoadedSuccessfullyID\",\"ApiLevel\":\"R&D\"}";
-/*static std::string message_Load_Progress_20 = "{\"MessageType\":\"20\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"FileLoadedSuccessfullyID\",\"ApiLevel\":\"R&D\"}";
-static std::string message_Load_Progress_40 = "{\"MessageType\":\"40\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"FileLoadedSuccessfullyID\",\"ApiLevel\":\"R&D\"}";
-static std::string message_Load_Progress_60 = "{\"MessageType\":\"60\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"FileLoadedSuccessfullyID\",\"ApiLevel\":\"R&D\"}";
-static std::string message_Load_Progress_80 = "{\"MessageType\":\"80\",\"ImmediateReplyTo\":\"nsp.reply1\",\"ContextId\":\"FileLoadedSuccessfullyID\",\"ApiLevel\":\"R&D\"}";
-*/static std::vector<std::string> routingKeys = {"GUI"};
+static std::vector<std::string> routingKeys = {"GUI"};
 static bool Select_initialized, Load_initialized, GUI_initialized, SimulationStarted_initialized ;
 int         fd;             // File descriptor of input file
 PhysMem     contigBuffer;   // Manages the reserved contiguous buffer
@@ -78,14 +74,11 @@ std::string T_Subscribe (std::string queue, std::string routingKey)
     nse::Bus bus("localhost", 5672, "genia", "genia123", "/", "ns3");
     bus.subscribe(routingKey, queue, AMQP::exclusive, AMQP::noack, [](const nse::MessageEnvelope& message) 
             {
-                    //printEnvelope(message);
-                    //::cout << "message received = " << message.messageID() << std::endl;
                     MessageID = message.messageID();
                     Message = message.typeName();
                     
     
             });
-    // Waiting here for receiving a message
     while (StopFlag==0)
     {
         if (MessageID=="GUIReady")
@@ -98,71 +91,55 @@ std::string T_Subscribe (std::string queue, std::string routingKey)
         else if(MessageID=="FileSelectedID") 
             {
                 FilePath = Message;      
-                if (!Select_initialized) {
-                Select_initialized = true;
-                Publish (message_Path_Received, 1, routingKeys);
-                //std::cout << "File's Path = " << FilePath << std::endl;
+                if (!Select_initialized) 
+                {
+                    Select_initialized = true;
+                    Publish (message_Path_Received, 1, routingKeys);
                 }
                 
             }
         else if (MessageID=="LoadFileID")
             {
-                if (!Load_initialized) {
-                Load_initialized = true;
-                /*Load the file here*/
-                filename = FilePath.c_str();
-                fd = open(filename, O_RDONLY);
-                if (fd < 0)
-                {
-                    fprintf(stderr, "Can't open %s\n", filename);
-                    exit(1);
-                }
-                size_t fileSize = getFileSize(fd);
-                if (fileSize > bufferSize) 
-                {
-                    fprintf(stderr, "File won't fit into contiguous buffer!\n");
-                    fprintf(stderr, "  File size = %12lu bytes\n", fileSize);
-                    fprintf(stderr, "Buffer size = %12lu bytes\n", bufferSize);
-                    exit(1);
-                }
-                else
-                {
-                    std::cout << "Loading!!!" << std::endl;
-                    fillBuffer(fileSize);
-                    /*std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-                    Publish (message_Load_Progress_20, 1, routingKeys);
-                    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-                    Publish (message_Load_Progress_40, 1, routingKeys);
-                    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-                    Publish (message_Load_Progress_60, 1, routingKeys);
-                    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-                    Publish (message_Load_Progress_80, 1, routingKeys);
-                    std::this_thread::sleep_for(std::chrono::milliseconds(2000));*/
-                }
-                
-                /*getting the loading percentage here and sending it to the GUI for illustration*/
-
-
-
-
-                /* When the load was complete and successful send this message*/
-                Publish (message_Load_Successful, 1, routingKeys);
-                //std::cout << "LoadFileID " << std::endl;
-                }
+                if (!Load_initialized) 
+                    {
+                        Load_initialized = true;
+                        filename = FilePath.c_str();
+                        fd = open(filename, O_RDONLY);
+                        if (fd < 0)
+                            {
+                                fprintf(stderr, "Can't open %s\n", filename);
+                                exit(1);
+                            }
+                        size_t fileSize = getFileSize(fd);
+                        if (fileSize > bufferSize) 
+                            {
+                                fprintf(stderr, "File won't fit into contiguous buffer!\n");
+                                fprintf(stderr, "  File size = %12lu bytes\n", fileSize);
+                                fprintf(stderr, "Buffer size = %12lu bytes\n", bufferSize);
+                                exit(1);
+                            }
+                        else
+                            {
+                                std::cout << "Loading!!!" << std::endl;
+                                fillBuffer(fileSize);
+                            }
+                        Publish (message_Load_Successful, 1, routingKeys);
+                    }
                 
             }
         else if (MessageID=="SimulationStarted")
-        {
-            if (!SimulationStarted_initialized) {
-                SimulationStarted_initialized = true;
-                std::cout << "SimulationStarted" << std::endl;
-                }
-            
-        }
+            {
+                if (!SimulationStarted_initialized) 
+                    {
+                        SimulationStarted_initialized = true;
+                        std::cout << "SimulationStarted" << std::endl;
+                    }
+                
+            }
         else
-        {
-             //std::cout << "No Message yet " << std::endl;
-        }
+            {
+                //std::cout << "No Message yet " << std::endl;
+            }
                 
     }
         
